@@ -17,6 +17,8 @@ var UserSchema = new Schema({
   pending: {
     date: String,
     description: String,
+    invitees: Array,
+    time: String,
   },
 });
 
