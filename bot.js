@@ -1,6 +1,7 @@
 const {
   WebClient,
   RtmClient,
+  MemoryDataStore,
   RTM_EVENTS
 } = require('@slack/client');
 const dialogflow = require('./dialogflow');
@@ -12,12 +13,28 @@ const {
 
 var token = process.env.SLACK_BOT_TOKEN || '';
 
-var rtm = new RtmClient(token);
+var rtm = new RtmClient(token, {
+  dataStore: new MemoryDataStore(),
+});
 var web = new WebClient(token);
 rtm.start();
 
+function parseUsersInMessage(message) {
+  let msg = message.text.split(' ');
+  msg = msg.map(word => {
+    if (word[0] === '<' && word[word.length - 1] === '>') {
+      let person = rtm.dataStore.getUserById(word.slice(2, word.length - 1))
+      return person.name
+    }
+    return word
+  })
+  msg = msg.join(' ')
+  return msg
+}
+
 function handleDialogflowConvo(message, user) {
-  dialogflow.interpretUserMessage(message.text, message.user)
+  let msg = parseUsersInMessage(message)
+  dialogflow.interpretUserMessage(msg, message.user)
   .then(function(res) {
     if (res.data.result.actionIncomplete) {
       web.chat.postMessage(message.channel, res.data.result.fulfillment.speech);
@@ -26,10 +43,32 @@ function handleDialogflowConvo(message, user) {
     else {
       user.pending.description = res.data.result.parameters.description;
       user.pending.date = res.data.result.parameters.date;
+      user.pending.time = res.data.result.parameters.time;
+      user.pending.invitees = res.data.result.parameters.invitees.map(invitee => {
+        try {
+          let person = rtm.dataStore.getUserByName(invitee)
+          return {
+            slackId: person.id,
+            email: person.profile.email,
+            name: person.name,
+          }
+        }
+        catch (e) {
+          return {
+            slackId: null,
+            email: null,
+            name: invitee,
+          }
+        }
+      });
       return user.save()
       .then(function() {
-        web.chat.postMessage(message.channel, null,
-          getInteractiveMessage(`Calendar event: \n${res.data.result.parameters.description} \non ${res.data.result.parameters.date}`));
+        let interactiveMessage = "Calendar Event:\n";
+        interactiveMessage += res.data.result.parameters.description ? `Description: ${res.data.result.parameters.description}\n` : ''
+        interactiveMessage += res.data.result.parameters.date ? `On: ${res.data.result.parameters.date}\n` : ''
+        interactiveMessage += res.data.result.parameters.time ? `At: ${res.data.result.parameters.time}\n` : ''
+        interactiveMessage += res.data.result.parameters.invitees ? `With: ${res.data.result.parameters.invitees}\n` : ''
+        web.chat.postMessage(message.channel, null, getInteractiveMessage(interactiveMessage));
       })
     }
   })

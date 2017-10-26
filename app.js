@@ -48,7 +48,11 @@ app.post('/slack/interactive', (req, res) => {
   var payload = JSON.parse(req.body.payload);
   if (payload.actions[0].value === 'true') {
     User.findOne({slackId: payload.user.id})
-    .then(user => google.createCalendarEvent(user.google.tokens, user.pending.description, user.pending.date))
+    .then(user => {
+      user.pending.time ?
+      google.createCalendarMeeting(user.google.tokens, user.pending.description, user.pending.date, user.pending.time, user.pending.invitees) :
+      google.createCalendarEvent(user.google.tokens, user.pending.description, user.pending.date)
+    })
     .then(function() {
       res.send('Created Reminder :white_check_mark:')
     })
