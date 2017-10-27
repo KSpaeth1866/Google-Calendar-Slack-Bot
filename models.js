@@ -22,12 +22,10 @@ var UserSchema = new Schema({
   },
 });
 
-UserSchema.statics.findOrCreate = function(slackId) {
-  return User.findOne({slackId})
-    .then(function(user) {
-      if (user) return user
-      else return new User({slackId}).save()
-    })
+UserSchema.statics.findOrCreate = async (slackId) => {
+  let user = await User.findOne({slackId})
+  if (user) return user
+  else return new User({slackId}).save()
 }
 
 const User = mongoose.model('User', UserSchema)

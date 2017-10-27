@@ -7,7 +7,7 @@ var scope = [
   'https://www.googleapis.com/auth/calendar'
 ];
 
-function getAuthClient() {
+const getAuthClient = () => {
   return new OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -39,8 +39,9 @@ module.exports = {
   },
 
   createCalendarEvent(tokens, description, date) {
-    var client = getAuthClient();
+    let client = getAuthClient();
     client.setCredentials(tokens);
+
     return new Promise(function(resolve, reject) {
       calendar.events.insert({
         auth: client,
@@ -60,22 +61,26 @@ module.exports = {
         if (err)  {
           reject(err);
         } else {
-          resolve(tokens);
+          resolve(res);
         }
       });
     });
   },
 
   createCalendarMeeting(tokens, description, date, time, invitees) {
+    let client = getAuthClient();
+    client.setCredentials(tokens);
+
     let start = new Date(date + ' ' + time)
     let end = new Date(date + ' ' + time)
+    end.setTime(start.getTime() + 1800000)
+    start = start.toISOString();
+    end = end.toISOString();
+
     let attendees = invitees
     .map(invitee => ({email: invitee.email,}))
     .filter(attendee => attendee.email ? attendee : null)
-    console.log(attendees);
-    end.setTime(start.getTime() + 1800000)
-    var client = getAuthClient();
-    client.setCredentials(tokens);
+
     return new Promise(function(resolve, reject) {
       calendar.events.insert({
         auth: client,
@@ -83,11 +88,11 @@ module.exports = {
         resource: {
           summary: description,
           start: {
-            dateTime: start.toISOString(),
+            dateTime: start,
             'timeZone': 'America/Los_Angeles',
           },
           end: {
-            dateTime: end.toISOString(),
+            dateTime: end,
             'timeZone': 'America/Los_Angeles'
           },
           attendees: attendees,
@@ -103,7 +108,39 @@ module.exports = {
         if (err)  {
           reject(err);
         } else {
-          resolve(tokens);
+          resolve(res);
+        }
+      });
+    });
+  },
+
+  checkCalendarAvailability(tokens, date, time) {
+    let client = getAuthClient();
+    client.setCredentials(tokens);
+
+    let start = new Date(date + ' ' + time)
+    let end = new Date(date + ' ' + time)
+    end.setTime(start.getTime() + 1800000)
+    start = start.toISOString();
+    end = end.toISOString();
+
+    return new Promise((resolve, reject) => {
+      calendar.freebusy.query({
+        auth: client,
+        resource: {
+          timeMin: start,
+          timeMax: end,
+          timeZone: 'America/Los_Angeles',
+          items: [
+            {id: 'spaet062@umn.edu',},
+            {id: 'kspaeth123@gmail.com',},
+          ],
+        }
+      }, function(err, res) {
+        if (err)  {
+          reject(err);
+        } else {
+          resolve(res);
         }
       });
     });
