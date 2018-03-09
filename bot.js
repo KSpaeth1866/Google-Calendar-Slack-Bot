@@ -26,8 +26,8 @@ rtm.start();
 
 rtm.on(RTM_EVENTS.MESSAGE, async (message) => {
   if (! message.user) return;
-  const user = await User.findOrCreate(message.user);
   try {
+    const user = await User.findOrCreate(message.user);
     if (user.pending.date) web.chat.postMessage(message.channel, 'Please resolve the previous request first');
     else if (user.google.isSetupComplete) handleConversation(message, user);
     else web.chat.postMessage(message.channel, `I need access to your Google Calendar\n http://localhost:3000/setup?slackId=${message.user}`);
@@ -51,7 +51,7 @@ async function handleConversation(message, user) {
     web.chat.postMessage(message.channel, null, createSlackInteractiveMessage(interactiveMessage));
   }
   catch(err) {
-    console.log('Error in handling to Dialogflow', err);
+    console.log(`error in handling bot message: ${err}`);
   }
 }
 

@@ -39,7 +39,6 @@ app.get('/google/callback', async (req, res) => {
 });
 
 app.post('/slack/interactive', async (req, res) => {
-  console.log('interactive');
   try {
     const payload = JSON.parse(req.body.payload);
     const user = await User.findOne({slackId: payload.user.id});
