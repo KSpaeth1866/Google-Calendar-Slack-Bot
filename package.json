@@ -20,11 +20,14 @@
     "@slack/client": "^3.14.1",
     "axios": "^0.17.0",
     "body-parser": "^1.18.2",
+    "eslint-plugin-async-await": "0.0.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
     "express": "^4.16.2",
     "express-validator": "^4.2.1",
     "google": "^2.1.0",
     "googleapis": "^22.2.0",
-    "mongoose": "^4.12.4"
+    "mongoose": "^4.12.4",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "nodemon": "^1.12.1"

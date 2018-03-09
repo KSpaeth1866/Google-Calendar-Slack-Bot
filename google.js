@@ -1,8 +1,8 @@
 "use strict";
-var google = require('googleapis');
-var calendar = google.calendar('v3');
-var OAuth2 = google.auth.OAuth2;
-var scope = [
+const google = require('googleapis');
+const calendar = google.calendar('v3');
+const OAuth2 = google.auth.OAuth2;
+const scope = [
   'https://www.googleapis.com/auth/plus.me',
   'https://www.googleapis.com/auth/calendar'
 ];
@@ -13,7 +13,7 @@ const getAuthClient = () => {
     process.env.GOOGLE_CLIENT_SECRET,
     'http://localhost:3000/google/callback'
   );
-}
+};
 
 module.exports = {
   generateAuthUrl(slackId) {
@@ -26,23 +26,21 @@ module.exports = {
   },
 
   getToken(code) {
-    var client = getAuthClient();
-    return new Promise(function(resolve, reject) {
-      client.getToken(code, function (err, tokens) {
-        if (err)  {
-          reject(err);
-        } else {
-          resolve(tokens);
-        }
+    const client = getAuthClient();
+    return new Promise((resolve, reject) => {
+      client.getToken(code, (err, tokens) => {
+        err ? reject(err) : resolve(tokens);
       });
     });
   },
 
   createCalendarEvent(tokens, description, date) {
-    let client = getAuthClient();
+    // creates event- all day, single person
+    // required: day, description
+    const client = getAuthClient();
     client.setCredentials(tokens);
 
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       calendar.events.insert({
         auth: client,
         calendarId: 'primary',
@@ -57,31 +55,30 @@ module.exports = {
             'timeZone': 'America/Los_Angeles'
           }
         }
-      }, function(err, res) {
-        if (err)  {
-          reject(err);
-        } else {
-          resolve(res);
-        }
+      }, (err, res) => {
+        err ? reject(err) : resolve(res);
       });
     });
   },
 
   createCalendarMeeting(tokens, description, date, time, invitees) {
-    let client = getAuthClient();
+    // creates meeting with people
+    // required: invitees, day, time
+    // optional: description
+    const client = getAuthClient();
     client.setCredentials(tokens);
 
-    let start = new Date(date + ' ' + time)
-    let end = new Date(date + ' ' + time)
-    end.setTime(start.getTime() + 1800000)
+    let start = new Date(date + ' ' + time);
+    let end = new Date(date + ' ' + time);
+    end.setTime(start.getTime() + 1800000);
     start = start.toISOString();
     end = end.toISOString();
 
-    let attendees = invitees
-    .map(invitee => ({email: invitee.email,}))
-    .filter(attendee => attendee.email ? attendee : null)
+    const attendees = invitees
+      .map(invitee => ({email: invitee.email}))
+      .filter(attendee => attendee.email ? attendee : null);
 
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       calendar.events.insert({
         auth: client,
         calendarId: 'primary',
@@ -104,25 +101,26 @@ module.exports = {
             ],
           },
         }
-      }, function(err, res) {
-        if (err)  {
-          reject(err);
-        } else {
-          resolve(res);
-        }
+      }, (err, res) => {
+        err ? reject(err) : resolve(res);
       });
     });
   },
 
-  checkCalendarAvailability(tokens, date, time) {
-    let client = getAuthClient();
+  checkCalendarAvailability(tokens, date, time, invitees) {
+    const client = getAuthClient();
     client.setCredentials(tokens);
 
-    let start = new Date(date + ' ' + time)
-    let end = new Date(date + ' ' + time)
-    end.setTime(start.getTime() + 1800000)
+    let start = new Date(date + ' ' + time);
+    let end = new Date(date + ' ' + time);
+    end.setTime(start.getTime() + 1800000);
     start = start.toISOString();
     end = end.toISOString();
+
+    const items = invitees
+      .map(invitee => ({id: invitee.email}))
+      .filter(attendee => attendee.id ? attendee : null);
+    items.push({id: 'primary'});
 
     return new Promise((resolve, reject) => {
       calendar.freebusy.query({
@@ -131,17 +129,10 @@ module.exports = {
           timeMin: start,
           timeMax: end,
           timeZone: 'America/Los_Angeles',
-          items: [
-            {id: 'spaet062@umn.edu',},
-            {id: 'kspaeth123@gmail.com',},
-          ],
+          items,
         }
-      }, function(err, res) {
-        if (err)  {
-          reject(err);
-        } else {
-          resolve(res);
-        }
+      }, (err, res) => {
+        err ? reject(err) : resolve(res);
       });
     });
   },

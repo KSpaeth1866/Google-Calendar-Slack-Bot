@@ -1,8 +1,10 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+"use strict";
+
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 mongoose.Promise = global.Promise;
 
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   slackId: {
     type: String,
     required: true,
@@ -23,13 +25,12 @@ var UserSchema = new Schema({
 });
 
 UserSchema.statics.findOrCreate = async (slackId) => {
-  let user = await User.findOne({slackId})
-  if (user) return user
-  else return new User({slackId}).save()
-}
+  const user = await User.findOne({slackId});
+  return user ? user : new User({slackId}).save();
+};
 
-const User = mongoose.model('User', UserSchema)
+const User = mongoose.model('User', UserSchema);
 
 module.exports = {
   User,
-}
+};
