@@ -1,9 +1,9 @@
 "use strict";
 
-var axios = require('axios');
+const axios = require('axios');
 
 async function interpretUserMessage(message, sessionId) {
-  let data = await axios.get('https://api.dialogflow.com/v1/query', {
+  const data = await axios.get('https://api.dialogflow.com/v1/query', {
     params: {
       v: '20170712',
       query: message,
@@ -15,7 +15,7 @@ async function interpretUserMessage(message, sessionId) {
       Authorization: `Bearer ${process.env.API_AI_TOKEN}`
     }
   });
-  return data
+  return data;
 }
 
 module.exports = {
